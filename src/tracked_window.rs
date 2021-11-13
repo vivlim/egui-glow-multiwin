@@ -3,6 +3,7 @@ use std::mem;
 use egui_glow::EguiGlow;
 use glutin::{ContextWrapper, PossiblyCurrent, WindowedContext, event::Event, event_loop::ControlFlow, window::Window};
 use thiserror::Error;
+use crate::windows::MyWindows;
 
 
 /// A window being tracked by a `MultiWindow`. All tracked windows will be forwarded all events
@@ -15,19 +16,19 @@ pub trait TrackedWindow {
     fn handle_event(&mut self, event: &glutin::event::Event<()>, other_windows: Vec<&mut crate::windows::MyWindows>, egui: &mut EguiGlow, gl_window: &mut glutin::WindowedContext<PossiblyCurrent>, gl: &mut glow::Context) -> Option<ControlFlow>;
 }
 
-pub struct TrackedWindowContainer<T> where T: TrackedWindow {
+pub struct TrackedWindowContainer {
     pub gl_window: IndeterminateWindowedContext,
     pub gl: Option<glow::Context>,
     pub egui: Option<EguiGlow>,
-    pub window: T
+    pub window: MyWindows
 }
 
-impl<T> TrackedWindowContainer<T> where T: TrackedWindow {
+impl TrackedWindowContainer {
     pub fn create(
-        window: T,
+        window: MyWindows,
         window_builder: glutin::window::WindowBuilder,
         event_loop: &glutin::event_loop::EventLoop<()>,
-    ) -> Result<TrackedWindowContainer<T>, DisplayCreationError> {
+    ) -> Result<TrackedWindowContainer, DisplayCreationError> {
         // let window_builder = glutin::window::WindowBuilder::new()
         //     .with_resizable(true)
         //     .with_inner_size(glutin::dpi::LogicalSize {

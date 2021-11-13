@@ -12,7 +12,7 @@ pub struct RootWindow {
 }
 
 impl RootWindow {
-    pub fn new(event_loop: &glutin::event_loop::EventLoop<()>) -> Result<TrackedWindowContainer<MyWindows>, DisplayCreationError> {
+    pub fn new(event_loop: &glutin::event_loop::EventLoop<()>) -> Result<TrackedWindowContainer, DisplayCreationError> {
         Ok(TrackedWindowContainer::create(
             RootWindow {
                 button_press_count: 0

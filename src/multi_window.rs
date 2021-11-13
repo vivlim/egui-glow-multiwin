@@ -7,11 +7,11 @@ use crate::windows::MyWindows;
 
 
 /// Manages multiple `TrackedWindow`s by forwarding events to them.
-pub struct MultiWindow<T> where T: TrackedWindow {
-    windows: Vec<TrackedWindowContainer<T>>,
+pub struct MultiWindow {
+    windows: Vec<TrackedWindowContainer>,
 }
 
-impl<T> MultiWindow<T> where T: TrackedWindow + From<MyWindows>, MyWindows: From<T> {
+impl MultiWindow {
     /// Creates a new `MultiWindow`.
     pub fn new() -> Self {
         MultiWindow {
@@ -20,7 +20,7 @@ impl<T> MultiWindow<T> where T: TrackedWindow + From<MyWindows>, MyWindows: From
     }
 
     /// Adds a new `TrackedWindow` to the `MultiWindow`.
-    pub fn add(&mut self, window: TrackedWindowContainer<T>) {
+    pub fn add(&mut self, window: TrackedWindowContainer) {
         self.windows.push(window)
     }
 
@@ -28,13 +28,13 @@ impl<T> MultiWindow<T> where T: TrackedWindow + From<MyWindows>, MyWindows: From
     pub fn run(&mut self, event_loop: &mut EventLoop<()>) {
         if !self.windows.is_empty() {
             event_loop.run_return(|event, _, flow| {
-                println!("handling event {:?}", event);
+                //println!("handling event {:?}", event);
                 let mut handled_windows = vec![];
                 let mut window_control_flow = vec![];
                 while let Some(mut window) = self.windows.pop() {
                     if window.is_event_for_window(&event) {
                         // Collect all the other windows.
-                        let other_windows = self.windows.iter_mut().chain(handled_windows.iter_mut()).map(|container| &mut container.window.as_mut()).collect();
+                        let other_windows = self.windows.iter_mut().chain(handled_windows.iter_mut()).map(|container| &mut container.window).collect();
                         match window.handle_event_outer(&event, other_windows) {
                             Some(ControlFlow::Exit) => {
                                 println!("window requested exit. Instead of sending the exit for everyone, just get rid of this one.");

@@ -11,7 +11,7 @@ pub struct PopupWindow {
 }
 
 impl PopupWindow {
-    pub fn new(event_loop: &glutin::event_loop::EventLoop<()>) -> Result<TrackedWindowContainer<MyWindows>, DisplayCreationError> {
+    pub fn new(event_loop: &glutin::event_loop::EventLoop<()>) -> Result<TrackedWindowContainer, DisplayCreationError> {
         Ok(TrackedWindowContainer::create(
             PopupWindow {}.into(),
             glutin::window::WindowBuilder::new()
@@ -46,7 +46,6 @@ impl TrackedWindow for PopupWindow {
                             _ => ()
                         }
                     }
-                    quit = true;
                 }
                 if ui.button("Quit").clicked() {
                     quit = true;
