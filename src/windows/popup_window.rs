@@ -7,13 +7,13 @@ use thiserror::Error;
 use crate::windows::MyWindows;
 
 
-pub struct RootWindow {
+pub struct PopupWindow {
 }
 
-impl RootWindow {
+impl PopupWindow {
     pub fn new(event_loop: &glutin::event_loop::EventLoop<()>) -> Result<TrackedWindowContainer<MyWindows>, DisplayCreationError> {
         Ok(TrackedWindowContainer::create(
-            RootWindow {}.into(),
+            PopupWindow {}.into(),
             glutin::window::WindowBuilder::new()
                 .with_resizable(true)
                 .with_inner_size(glutin::dpi::LogicalSize {
@@ -25,7 +25,7 @@ impl RootWindow {
     }
 }
 
-impl TrackedWindow for RootWindow {
+impl TrackedWindow for PopupWindow {
     fn handle_event<T>(&mut self, event: &glutin::event::Event<()>, other_windows: Vec<&mut T>, egui: &mut EguiGlow, gl_window: &mut glutin::WindowedContext<PossiblyCurrent>, gl: &mut glow::Context) -> Option<ControlFlow> {
 
         // Child window's requested control flow.
@@ -36,7 +36,7 @@ impl TrackedWindow for RootWindow {
             let mut quit = false;
 
             egui::SidePanel::left("my_side_panel").show(egui.ctx(), |ui| {
-                ui.heading("Hello World!");
+                ui.heading("I'm different");
                 if ui.button("Quit").clicked() {
                     quit = true;
                 }

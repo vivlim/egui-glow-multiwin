@@ -10,14 +10,14 @@ use egui_glow::EguiGlow;
 use glutin::event::Event;
 use multi_window::MultiWindow;
 use tracked_window::{TrackedWindowContainer, TrackedWindow};
-use windows::root::{self, RootWindow};
+use windows::{popup_window, root::{self, RootWindow}, MyWindows};
 
 
 fn main() {
     let mut event_loop = glutin::event_loop::EventLoop::with_user_event();
-    let mut multi_window = MultiWindow::new();
+    let mut multi_window: MultiWindow<MyWindows> = MultiWindow::new();
     let mut root_window = root::RootWindow::new(&event_loop).unwrap();
-    let mut root_window2 = root::RootWindow::new(&event_loop).unwrap();
+    let mut root_window2 = popup_window::PopupWindow::new(&event_loop).unwrap();
 
     multi_window.add(root_window);
     multi_window.add(root_window2);

@@ -13,12 +13,18 @@ pub trait TrackedWindow {
     /// Handles one event from the event loop. Returns true if the window needs to be kept alive,
     /// otherwise it will be closed. Window events should be checked to ensure that their ID is one
     /// that the TrackedWindow is interested in.
-    fn handle_event(&mut self, event: &glutin::event::Event<()>, egui: &mut EguiGlow, gl_window: &mut glutin::WindowedContext<PossiblyCurrent>, gl: &mut glow::Context) -> Option<ControlFlow>;
+    fn handle_event<T>(&mut self, event: &glutin::event::Event<()>, other_windows: Vec<&mut T>, egui: &mut EguiGlow, gl_window: &mut glutin::WindowedContext<PossiblyCurrent>, gl: &mut glow::Context) -> Option<ControlFlow>;
 }
 
-impl dyn TrackedWindow {
+pub struct TrackedWindowContainer<T> where T: TrackedWindow {
+    pub gl_window: IndeterminateWindowedContext,
+    pub gl: Option<glow::Context>,
+    pub egui: Option<EguiGlow>,
+    pub window: T
+}
 
-    pub fn create_display<T: TrackedWindow>(
+impl<T> TrackedWindowContainer<T> where T: TrackedWindow {
+    pub fn create(
         window: T,
         window_builder: glutin::window::WindowBuilder,
         event_loop: &glutin::event_loop::EventLoop<()>,
@@ -46,33 +52,25 @@ impl dyn TrackedWindow {
             egui: None
         })
     }
-}
 
-pub struct TrackedWindowContainer<T> where T: TrackedWindow {
-    pub gl_window: IndeterminateWindowedContext,
-    pub gl: Option<glow::Context>,
-    pub egui: Option<EguiGlow>,
-    pub window: T
-}
-
-impl<T> TrackedWindowContainer<T> where T: TrackedWindow {
-    pub fn handle_event_outer(&mut self, event: &glutin::event::Event<()>) -> Option<ControlFlow> {
+    pub fn is_event_for_window(&self, event: &glutin::event::Event<()>) -> bool {
         // Check if the window ID matches, if not then this window can pass on the event.
         match (event, &self.gl_window) {
             (Event::WindowEvent { window_id: id, event, .. }, IndeterminateWindowedContext::PossiblyCurrent(gl_window))=> {
-                if gl_window.window().id() != *id {
-                    return None
-                }
+                gl_window.window().id() == *id
             },
             (Event::WindowEvent { window_id: id, event, .. }, IndeterminateWindowedContext::NotCurrent(gl_window))=> {
-                if gl_window.window().id() != *id {
-                    return None
-                }
+                gl_window.window().id() == *id
             },
-            _ => ()
-        };
+            _ => true // we weren't able to check the window ID, maybe this window is not initialized yet. we should run it.
+        }
+    }
 
-        // Activate this gl window so we can use it.
+    pub fn handle_event_outer(&mut self, event: &glutin::event::Event<()>, other_windows:Vec<&mut T>) -> Option<ControlFlow> {
+
+        // Activate this gl_window so we can use it.
+        // We cannot activate it without full ownership, so temporarily move the gl_window into the current scope.
+        // It *must* be returned at the end.
         let gl_window = mem::replace(&mut self.gl_window, IndeterminateWindowedContext::None);
         let mut gl_window = match gl_window {
             IndeterminateWindowedContext::PossiblyCurrent(w) => unsafe {w.make_current().unwrap()},
@@ -100,14 +98,27 @@ impl<T> TrackedWindowContainer<T> where T: TrackedWindow {
 
         let result = match (self.gl.as_mut(), self.egui.as_mut()) {
             (Some(gl), Some(egui)) => {
-                self.window.handle_event(event, egui, &mut gl_window, gl)
+                match self.window.handle_event(event, other_windows, egui, &mut gl_window, gl) {
+                    Some(ControlFlow::Exit) | None => {
+                        // This window wants to go away. Close it.
+                        egui.destroy(&gl);
+                        None
+                    },
+                    result => result
+                }
             },
             _ => {
                 panic!("Window wasn't fully initialized");
             }
         };
+
          
-        mem::replace(&mut self.gl_window, IndeterminateWindowedContext::PossiblyCurrent(gl_window));
+        match mem::replace(&mut self.gl_window, IndeterminateWindowedContext::PossiblyCurrent(gl_window)){
+            IndeterminateWindowedContext::None => (),
+            _ => {
+                panic!("Window had a GL context while we were borrowing it?");
+            }
+        }
         return result;
 
 
@@ -122,12 +133,6 @@ impl<T> TrackedWindowContainer<T> where T: TrackedWindow {
         // };
 
     }
-}
-
-pub struct EguiWindow {
-    pub gl_window: IndeterminateWindowedContext,
-    pub gl: Option<glow::Context>,
-    pub egui: Option<EguiGlow>
 }
 
 pub enum IndeterminateWindowedContext {
