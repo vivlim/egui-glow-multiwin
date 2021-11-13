@@ -1,13 +1,13 @@
 use glutin::{event_loop::{ControlFlow, EventLoop}, platform::run_return::EventLoopExtRunReturn};
 
-use crate::tracked_window::TrackedWindow;
+use crate::tracked_window::{EventHandlingWindowContainer, TrackedWindow};
 
 
 
 
 /// Manages multiple `TrackedWindow`s by forwarding events to them.
 pub struct MultiWindow {
-    windows: Vec<Option<Box<dyn TrackedWindow>>>,
+    windows: Vec<Option<Box<dyn EventHandlingWindowContainer>>>,
 }
 
 impl MultiWindow {
@@ -19,7 +19,7 @@ impl MultiWindow {
     }
 
     /// Adds a new `TrackedWindow` to the `MultiWindow`.
-    pub fn add(&mut self, window: Box<dyn TrackedWindow>) {
+    pub fn add(&mut self, window: Box<dyn EventHandlingWindowContainer>) {
         self.windows.push(Some(window))
     }
 

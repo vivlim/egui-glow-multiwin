@@ -6,14 +6,14 @@ pub mod windows;
 use egui_glow::EguiGlow;
 use glutin::event::Event;
 use multi_window::MultiWindow;
-use tracked_window::TrackedWindow;
+use tracked_window::{EventHandlingWindowContainer, TrackedWindow};
 use windows::root;
 
 
 fn main() {
     let mut event_loop = glutin::event_loop::EventLoop::with_user_event();
     let mut multi_window = MultiWindow::new();
-    let mut windows: Vec<Box<dyn TrackedWindow>> = Default::default();
+    let mut windows: Vec<Box<dyn EventHandlingWindowContainer>> = Default::default();
     let mut root_window = root::RootWindow::new(&event_loop).unwrap();
     let mut root_window2 = root::RootWindow::new(&event_loop).unwrap();
 
