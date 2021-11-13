@@ -510,7 +510,6 @@ dependencies = [
  "glow",
  "glutin",
  "image",
- "memoffset",
  "thiserror",
 ]
 
