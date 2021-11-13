@@ -1,6 +1,6 @@
 use std::mem;
 
-use crate::{multi_window::MultiWindow, tracked_window::{DisplayCreationError, TrackedWindow, TrackedWindowContainer, WindowedContext}};
+use crate::{multi_window::MultiWindow, tracked_window::{DisplayCreationError, TrackedWindow, TrackedWindowContainer, IndeterminateWindowedContext}};
 use egui_glow::EguiGlow;
 use glutin::{PossiblyCurrent, event::Event, event_loop::ControlFlow};
 use thiserror::Error;

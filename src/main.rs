@@ -3,22 +3,24 @@ pub mod multi_window;
 pub mod tracked_window;
 pub mod windows;
 
+#[macro_use]
+extern crate enum_dispatch;
+
 use egui_glow::EguiGlow;
 use glutin::event::Event;
 use multi_window::MultiWindow;
-use tracked_window::{EventHandlingWindowContainer, TrackedWindow};
-use windows::root;
+use tracked_window::{TrackedWindowContainer, TrackedWindow};
+use windows::root::{self, RootWindow};
 
 
 fn main() {
     let mut event_loop = glutin::event_loop::EventLoop::with_user_event();
     let mut multi_window = MultiWindow::new();
-    let mut windows: Vec<Box<dyn EventHandlingWindowContainer>> = Default::default();
     let mut root_window = root::RootWindow::new(&event_loop).unwrap();
     let mut root_window2 = root::RootWindow::new(&event_loop).unwrap();
 
-    multi_window.add(Box::new(root_window));
-    multi_window.add(Box::new(root_window2));
+    multi_window.add(root_window);
+    multi_window.add(root_window2);
     multi_window.run(&mut event_loop);
 
     /*
