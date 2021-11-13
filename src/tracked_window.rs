@@ -3,7 +3,6 @@ use std::mem;
 use egui_glow::EguiGlow;
 use glutin::{ContextWrapper, PossiblyCurrent, WindowedContext, event::Event, event_loop::ControlFlow, window::Window};
 use thiserror::Error;
-use crate::windows::MyWindows;
 
 
 /// A window being tracked by a `MultiWindow`. All tracked windows will be forwarded all events
@@ -13,7 +12,7 @@ pub trait TrackedWindow {
     /// Handles one event from the event loop. Returns true if the window needs to be kept alive,
     /// otherwise it will be closed. Window events should be checked to ensure that their ID is one
     /// that the TrackedWindow is interested in.
-    fn handle_event<T>(&mut self, event: &glutin::event::Event<()>, other_windows: Vec<&mut T>, egui: &mut EguiGlow, gl_window: &mut glutin::WindowedContext<PossiblyCurrent>, gl: &mut glow::Context) -> Option<ControlFlow>;
+    fn handle_event(&mut self, event: &glutin::event::Event<()>, other_windows: Vec<&mut crate::windows::MyWindows>, egui: &mut EguiGlow, gl_window: &mut glutin::WindowedContext<PossiblyCurrent>, gl: &mut glow::Context) -> Option<ControlFlow>;
 }
 
 pub struct TrackedWindowContainer<T> where T: TrackedWindow {
@@ -66,7 +65,7 @@ impl<T> TrackedWindowContainer<T> where T: TrackedWindow {
         }
     }
 
-    pub fn handle_event_outer(&mut self, event: &glutin::event::Event<()>, other_windows:Vec<&mut T>) -> Option<ControlFlow> {
+    pub fn handle_event_outer(&mut self, event: &glutin::event::Event<()>, other_windows:Vec<&mut crate::windows::MyWindows>) -> Option<ControlFlow> {
 
         // Activate this gl_window so we can use it.
         // We cannot activate it without full ownership, so temporarily move the gl_window into the current scope.

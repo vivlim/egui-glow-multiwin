@@ -8,12 +8,15 @@ use crate::windows::MyWindows;
 
 
 pub struct RootWindow {
+    pub button_press_count: u32,
 }
 
 impl RootWindow {
     pub fn new(event_loop: &glutin::event_loop::EventLoop<()>) -> Result<TrackedWindowContainer<MyWindows>, DisplayCreationError> {
         Ok(TrackedWindowContainer::create(
-            RootWindow {}.into(),
+            RootWindow {
+                button_press_count: 0
+            }.into(),
             glutin::window::WindowBuilder::new()
                 .with_resizable(true)
                 .with_inner_size(glutin::dpi::LogicalSize {
@@ -26,7 +29,7 @@ impl RootWindow {
 }
 
 impl TrackedWindow for RootWindow {
-    fn handle_event<T>(&mut self, event: &glutin::event::Event<()>, other_windows: Vec<&mut T>, egui: &mut EguiGlow, gl_window: &mut glutin::WindowedContext<PossiblyCurrent>, gl: &mut glow::Context) -> Option<ControlFlow> {
+    fn handle_event(&mut self, event: &glutin::event::Event<()>, other_windows: Vec<&mut MyWindows>, egui: &mut EguiGlow, gl_window: &mut glutin::WindowedContext<PossiblyCurrent>, gl: &mut glow::Context) -> Option<ControlFlow> {
 
         // Child window's requested control flow.
         let mut control_flow = ControlFlow::Wait; // Unless this changes, we're fine waiting until the next event comes in.
@@ -40,6 +43,9 @@ impl TrackedWindow for RootWindow {
                 if ui.button("Quit").clicked() {
                     quit = true;
                 }
+            });
+            egui::CentralPanel::default().show(egui.ctx(), |ui| {
+                ui.heading(format!("number {}", self.button_press_count))
             });
 
             let (needs_repaint, shapes) = egui.end_frame(gl_window.window());

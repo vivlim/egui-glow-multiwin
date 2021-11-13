@@ -1,6 +1,7 @@
 use glutin::{event_loop::{ControlFlow, EventLoop}, platform::run_return::EventLoopExtRunReturn};
 
 use crate::tracked_window::{TrackedWindow, TrackedWindowContainer};
+use crate::windows::MyWindows;
 
 
 
@@ -10,7 +11,7 @@ pub struct MultiWindow<T> where T: TrackedWindow {
     windows: Vec<TrackedWindowContainer<T>>,
 }
 
-impl<T> MultiWindow<T> where T: TrackedWindow {
+impl<T> MultiWindow<T> where T: TrackedWindow + From<MyWindows>, MyWindows: From<T> {
     /// Creates a new `MultiWindow`.
     pub fn new() -> Self {
         MultiWindow {
@@ -33,7 +34,7 @@ impl<T> MultiWindow<T> where T: TrackedWindow {
                 while let Some(mut window) = self.windows.pop() {
                     if window.is_event_for_window(&event) {
                         // Collect all the other windows.
-                        let other_windows = self.windows.iter_mut().chain(handled_windows.iter_mut()).map(|container| &mut container.window).collect();
+                        let other_windows = self.windows.iter_mut().chain(handled_windows.iter_mut()).map(|container| &mut container.window.as_mut()).collect();
                         match window.handle_event_outer(&event, other_windows) {
                             Some(ControlFlow::Exit) => {
                                 println!("window requested exit. Instead of sending the exit for everyone, just get rid of this one.");

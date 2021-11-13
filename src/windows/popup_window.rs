@@ -15,18 +15,18 @@ impl PopupWindow {
         Ok(TrackedWindowContainer::create(
             PopupWindow {}.into(),
             glutin::window::WindowBuilder::new()
-                .with_resizable(true)
+                .with_resizable(false)
                 .with_inner_size(glutin::dpi::LogicalSize {
-                    width: 800.0,
-                    height: 600.0,
+                    width: 400.0,
+                    height: 400.0,
                 })
-                .with_title("egui-multiwin root window"),
+                .with_title("egui-multiwin popup window"),
                 event_loop)?)
     }
 }
 
 impl TrackedWindow for PopupWindow {
-    fn handle_event<T>(&mut self, event: &glutin::event::Event<()>, other_windows: Vec<&mut T>, egui: &mut EguiGlow, gl_window: &mut glutin::WindowedContext<PossiblyCurrent>, gl: &mut glow::Context) -> Option<ControlFlow> {
+    fn handle_event(&mut self, event: &glutin::event::Event<()>, other_windows: Vec<&mut MyWindows>, egui: &mut EguiGlow, gl_window: &mut glutin::WindowedContext<PossiblyCurrent>, gl: &mut glow::Context) -> Option<ControlFlow> {
 
         // Child window's requested control flow.
         let mut control_flow = ControlFlow::Wait; // Unless this changes, we're fine waiting until the next event comes in.
@@ -35,8 +35,19 @@ impl TrackedWindow for PopupWindow {
 
             let mut quit = false;
 
-            egui::SidePanel::left("my_side_panel").show(egui.ctx(), |ui| {
+            egui::CentralPanel::default().show(egui.ctx(), |ui| {
                 ui.heading("I'm different");
+                if ui.button("Increment").clicked() {
+                    for window in other_windows {
+                        match window {
+                            MyWindows::Root(root_window) => {
+                                root_window.button_press_count += 1
+                            }
+                            _ => ()
+                        }
+                    }
+                    quit = true;
+                }
                 if ui.button("Quit").clicked() {
                     quit = true;
                 }
