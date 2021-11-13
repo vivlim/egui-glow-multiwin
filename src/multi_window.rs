@@ -1,7 +1,7 @@
 use glutin::{event_loop::{ControlFlow, EventLoop}, platform::run_return::EventLoopExtRunReturn};
 
-use crate::tracked_window::{TrackedWindow, TrackedWindowContainer};
-use crate::windows::MyWindows;
+use crate::tracked_window::{TrackedWindowContainer};
+
 
 
 

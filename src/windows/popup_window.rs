@@ -1,9 +1,9 @@
-use std::mem;
 
-use crate::{multi_window::MultiWindow, tracked_window::{DisplayCreationError, TrackedWindow, TrackedWindowContainer, IndeterminateWindowedContext}};
+
+use crate::{tracked_window::{DisplayCreationError, TrackedWindow, TrackedWindowContainer}};
 use egui_glow::EguiGlow;
-use glutin::{PossiblyCurrent, event::Event, event_loop::ControlFlow};
-use thiserror::Error;
+use glutin::{PossiblyCurrent, event_loop::ControlFlow};
+
 use crate::windows::MyWindows;
 
 
@@ -12,7 +12,7 @@ pub struct PopupWindow {
 
 impl PopupWindow {
     pub fn new(event_loop: &glutin::event_loop::EventLoop<()>) -> Result<TrackedWindowContainer, DisplayCreationError> {
-        Ok(TrackedWindowContainer::create(
+        TrackedWindowContainer::create(
             PopupWindow {}.into(),
             glutin::window::WindowBuilder::new()
                 .with_resizable(false)
@@ -21,7 +21,7 @@ impl PopupWindow {
                     height: 400.0,
                 })
                 .with_title("egui-multiwin popup window"),
-                event_loop)?)
+                event_loop)
     }
 }
 
@@ -30,7 +30,7 @@ impl TrackedWindow for PopupWindow {
 
         // Child window's requested control flow.
         let mut control_flow = ControlFlow::Wait; // Unless this changes, we're fine waiting until the next event comes in.
-        let mut redraw = || {
+        let redraw = || {
             egui.begin_frame(gl_window.window());
 
             let mut quit = false;
@@ -73,7 +73,7 @@ impl TrackedWindow for PopupWindow {
 
                 // draw things behind egui here
 
-                egui.paint(&gl_window, &gl, shapes);
+                egui.paint(gl_window, gl, shapes);
 
                 // draw things on top of egui here
 
@@ -90,7 +90,7 @@ impl TrackedWindow for PopupWindow {
             glutin::event::Event::RedrawRequested(_) if !cfg!(windows) => redraw(),
 
             glutin::event::Event::WindowEvent { event, .. } => {
-                if egui.is_quit_event(&event) {
+                if egui.is_quit_event(event) {
                     control_flow = glutin::event_loop::ControlFlow::Exit;
                 }
 
@@ -98,7 +98,7 @@ impl TrackedWindow for PopupWindow {
                     gl_window.resize(*physical_size);
                 }
 
-                egui.on_event(&event);
+                egui.on_event(event);
 
                 gl_window.window().request_redraw(); // TODO: ask egui if the events warrants a repaint instead
             }

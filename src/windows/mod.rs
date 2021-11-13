@@ -1,4 +1,4 @@
-use glutin::{ContextWrapper, PossiblyCurrent, WindowedContext, event::Event, event_loop::ControlFlow, window::Window};
+use glutin::{PossiblyCurrent, event_loop::ControlFlow};
 use crate::tracked_window::{TrackedWindow};
 use egui_glow::EguiGlow;
 

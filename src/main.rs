@@ -6,18 +6,18 @@ pub mod windows;
 #[macro_use]
 extern crate enum_dispatch;
 
-use egui_glow::EguiGlow;
-use glutin::event::Event;
+
+
 use multi_window::MultiWindow;
-use tracked_window::{TrackedWindowContainer, TrackedWindow};
-use windows::{popup_window, root::{self, RootWindow}, MyWindows};
+
+use windows::{popup_window, root::{self}};
 
 
 fn main() {
     let mut event_loop = glutin::event_loop::EventLoop::with_user_event();
     let mut multi_window = MultiWindow::new();
-    let mut root_window = root::RootWindow::new(&event_loop).unwrap();
-    let mut root_window2 = popup_window::PopupWindow::new(&event_loop).unwrap();
+    let root_window = root::RootWindow::new(&event_loop).unwrap();
+    let root_window2 = popup_window::PopupWindow::new(&event_loop).unwrap();
 
     multi_window.add(root_window);
     multi_window.add(root_window2);

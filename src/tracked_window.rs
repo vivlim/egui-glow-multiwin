@@ -1,7 +1,7 @@
 use std::mem;
 
 use egui_glow::EguiGlow;
-use glutin::{ContextWrapper, PossiblyCurrent, WindowedContext, event::Event, event_loop::ControlFlow, window::Window};
+use glutin::{PossiblyCurrent, event::Event, event_loop::ControlFlow};
 use thiserror::Error;
 use crate::windows::MyWindows;
 
@@ -46,7 +46,7 @@ impl TrackedWindowContainer {
                 .build_windowed(window_builder, event_loop)?;
 
         Ok(TrackedWindowContainer {
-            window: window,
+            window,
             gl_window: IndeterminateWindowedContext::NotCurrent(gl_window),
             gl: None,
             egui: None
@@ -56,10 +56,10 @@ impl TrackedWindowContainer {
     pub fn is_event_for_window(&self, event: &glutin::event::Event<()>) -> bool {
         // Check if the window ID matches, if not then this window can pass on the event.
         match (event, &self.gl_window) {
-            (Event::WindowEvent { window_id: id, event, .. }, IndeterminateWindowedContext::PossiblyCurrent(gl_window))=> {
+            (Event::WindowEvent { window_id: id, event: _, .. }, IndeterminateWindowedContext::PossiblyCurrent(gl_window))=> {
                 gl_window.window().id() == *id
             },
-            (Event::WindowEvent { window_id: id, event, .. }, IndeterminateWindowedContext::NotCurrent(gl_window))=> {
+            (Event::WindowEvent { window_id: id, event: _, .. }, IndeterminateWindowedContext::NotCurrent(gl_window))=> {
                 gl_window.window().id() == *id
             },
             _ => true // we weren't able to check the window ID, maybe this window is not initialized yet. we should run it.
@@ -101,7 +101,7 @@ impl TrackedWindowContainer {
                 match self.window.handle_event(event, other_windows, egui, &mut gl_window, gl) {
                     Some(ControlFlow::Exit) | None => {
                         // This window wants to go away. Close it.
-                        egui.destroy(&gl);
+                        egui.destroy(gl);
                         None
                     },
                     result => result
@@ -119,7 +119,7 @@ impl TrackedWindowContainer {
                 panic!("Window had a GL context while we were borrowing it?");
             }
         }
-        return result;
+        result
 
 
         // self.gl_window.makecurr
