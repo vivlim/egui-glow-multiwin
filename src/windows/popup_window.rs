@@ -1,6 +1,6 @@
 
 
-use crate::{tracked_window::{DisplayCreationError, TrackedWindow, TrackedWindowContainer}};
+use crate::{multi_window::{MultiWindow, NewWindowRequest}, tracked_window::{DisplayCreationError, TrackedWindow, TrackedWindowContainer, TrackedWindowControl}};
 use egui_glow::EguiGlow;
 use glutin::{PossiblyCurrent, event_loop::ControlFlow};
 
@@ -8,35 +8,46 @@ use crate::windows::MyWindows;
 
 
 pub struct PopupWindow {
+    pub input: String,
 }
 
 impl PopupWindow {
-    pub fn new(event_loop: &glutin::event_loop::EventLoop<()>) -> Result<TrackedWindowContainer, DisplayCreationError> {
-        TrackedWindowContainer::create(
-            PopupWindow {}.into(),
-            glutin::window::WindowBuilder::new()
+    pub fn new(label: String) -> NewWindowRequest {
+        NewWindowRequest {
+            window_state: PopupWindow {
+                input: label.clone()
+            }.into(),
+            builder: glutin::window::WindowBuilder::new()
                 .with_resizable(false)
                 .with_inner_size(glutin::dpi::LogicalSize {
                     width: 400.0,
-                    height: 400.0,
+                    height: 200.0,
                 })
-                .with_title("egui-multiwin popup window"),
-                event_loop)
+                .with_title(label)
+        }
     }
 }
 
 impl TrackedWindow for PopupWindow {
-    fn handle_event(&mut self, event: &glutin::event::Event<()>, other_windows: Vec<&mut MyWindows>, egui: &mut EguiGlow, gl_window: &mut glutin::WindowedContext<PossiblyCurrent>, gl: &mut glow::Context) -> Option<ControlFlow> {
+    fn handle_event(&mut self, event: &glutin::event::Event<()>, other_windows: Vec<&mut MyWindows>, egui: &mut EguiGlow, gl_window: &mut glutin::WindowedContext<PossiblyCurrent>, gl: &mut glow::Context) -> TrackedWindowControl {
 
         // Child window's requested control flow.
         let mut control_flow = ControlFlow::Wait; // Unless this changes, we're fine waiting until the next event comes in.
+
+        // Check if there are any root windows left, and exit if there are none.
+        let mut root_window_exists = false;
+        for other in &other_windows {
+            if let MyWindows::Root(_) = other {
+                root_window_exists = true;
+            }
+        }
+
         let redraw = || {
             egui.begin_frame(gl_window.window());
 
             let mut quit = false;
 
             egui::CentralPanel::default().show(egui.ctx(), |ui| {
-                ui.heading("I'm different");
                 if ui.button("Increment").clicked() {
                     for window in other_windows {
                         match window {
@@ -46,6 +57,13 @@ impl TrackedWindow for PopupWindow {
                             _ => ()
                         }
                     }
+                }
+                let response = ui.add(egui::TextEdit::singleline(&mut self.input));
+                if response.changed() {
+                    // …
+                }
+                if response.lost_focus() && ui.input().key_pressed(egui::Key::Enter) {
+                    // …
                 }
                 if ui.button("Quit").clicked() {
                     quit = true;
@@ -109,6 +127,14 @@ impl TrackedWindow for PopupWindow {
             _ => (),
         }
 
-        Some(control_flow)
+        if !root_window_exists {
+            println!("Root window is gone, exiting popup.");
+            control_flow = ControlFlow::Exit;
+        }
+
+        TrackedWindowControl {
+            requested_control_flow: control_flow,
+            windows_to_create: vec![]
+        }
     }
 }

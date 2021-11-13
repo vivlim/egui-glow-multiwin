@@ -16,12 +16,12 @@ use windows::{popup_window, root::{self}};
 fn main() {
     let mut event_loop = glutin::event_loop::EventLoop::with_user_event();
     let mut multi_window = MultiWindow::new();
-    let root_window = root::RootWindow::new(&event_loop).unwrap();
-    let root_window2 = popup_window::PopupWindow::new(&event_loop).unwrap();
+    let root_window = root::RootWindow::new();
+    let root_window2 = popup_window::PopupWindow::new("initial popup".to_string());
 
-    multi_window.add(root_window);
-    multi_window.add(root_window2);
-    multi_window.run(&mut event_loop);
+    multi_window.add(root_window, &event_loop);
+    multi_window.add(root_window2, &event_loop);
+    MultiWindow::run(multi_window, event_loop);
 
     /*
     event_loop.run(move |event, _, control_flow| {

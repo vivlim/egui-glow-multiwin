@@ -1,38 +1,44 @@
 
 
-use crate::{tracked_window::{DisplayCreationError, TrackedWindow, TrackedWindowContainer}};
+use crate::{multi_window::NewWindowRequest, tracked_window::{DisplayCreationError, TrackedWindow, TrackedWindowContainer, TrackedWindowControl}, windows::popup_window::PopupWindow};
 use egui_glow::EguiGlow;
 use glutin::{PossiblyCurrent, event_loop::ControlFlow};
+use crate::MultiWindow;
 
 use crate::windows::MyWindows;
 
 
 pub struct RootWindow {
     pub button_press_count: u32,
+    pub num_popups_created: u32,
 }
 
 impl RootWindow {
-    pub fn new(event_loop: &glutin::event_loop::EventLoop<()>) -> Result<TrackedWindowContainer, DisplayCreationError> {
-        TrackedWindowContainer::create(
-            RootWindow {
-                button_press_count: 0
+    pub fn new() -> NewWindowRequest {
+        NewWindowRequest {
+            window_state: RootWindow {
+                button_press_count: 0,
+                num_popups_created: 0,
             }.into(),
-            glutin::window::WindowBuilder::new()
+            builder: glutin::window::WindowBuilder::new()
                 .with_resizable(true)
                 .with_inner_size(glutin::dpi::LogicalSize {
                     width: 800.0,
                     height: 600.0,
                 })
-                .with_title("egui-multiwin root window"),
-                event_loop)
+                .with_title("egui-multiwin root window")
+        }
     }
 }
 
 impl TrackedWindow for RootWindow {
-    fn handle_event(&mut self, event: &glutin::event::Event<()>, _other_windows: Vec<&mut MyWindows>, egui: &mut EguiGlow, gl_window: &mut glutin::WindowedContext<PossiblyCurrent>, gl: &mut glow::Context) -> Option<ControlFlow> {
+    fn handle_event(&mut self, event: &glutin::event::Event<()>, other_windows: Vec<&mut MyWindows>, egui: &mut EguiGlow, gl_window: &mut glutin::WindowedContext<PossiblyCurrent>, gl: &mut glow::Context) -> TrackedWindowControl {
 
         // Child window's requested control flow.
         let mut control_flow = ControlFlow::Wait; // Unless this changes, we're fine waiting until the next event comes in.
+
+        let mut windows_to_create = vec![];
+
         let mut redraw = || {
             egui.begin_frame(gl_window.window());
 
@@ -40,12 +46,25 @@ impl TrackedWindow for RootWindow {
 
             egui::SidePanel::left("my_side_panel").show(egui.ctx(), |ui| {
                 ui.heading("Hello World!");
+                if ui.button("New popup").clicked() {
+                    windows_to_create.push(PopupWindow::new(format!("popup window #{}", self.num_popups_created)));
+                    self.num_popups_created += 1;
+                }
                 if ui.button("Quit").clicked() {
                     quit = true;
                 }
             });
             egui::CentralPanel::default().show(egui.ctx(), |ui| {
-                ui.heading(format!("number {}", self.button_press_count))
+                ui.heading(format!("number {}", self.button_press_count));
+
+                for window in other_windows {
+                    match window {
+                        MyWindows::Popup(popup_window) => {
+                            ui.add(egui::TextEdit::singleline(&mut popup_window.input));
+                        },
+                        _ => ()
+                    }
+                }
             });
 
             let (needs_repaint, shapes) = egui.end_frame(gl_window.window());
@@ -105,6 +124,9 @@ impl TrackedWindow for RootWindow {
             _ => (),
         }
 
-        Some(control_flow)
+        TrackedWindowControl {
+            requested_control_flow: control_flow,
+            windows_to_create
+        }
     }
 }

@@ -3,7 +3,7 @@ use std::mem;
 use egui_glow::EguiGlow;
 use glutin::{PossiblyCurrent, event::Event, event_loop::ControlFlow};
 use thiserror::Error;
-use crate::windows::MyWindows;
+use crate::{multi_window::{MultiWindow, NewWindowRequest}, windows::MyWindows};
 
 
 /// A window being tracked by a `MultiWindow`. All tracked windows will be forwarded all events
@@ -13,7 +13,7 @@ pub trait TrackedWindow {
     /// Handles one event from the event loop. Returns true if the window needs to be kept alive,
     /// otherwise it will be closed. Window events should be checked to ensure that their ID is one
     /// that the TrackedWindow is interested in.
-    fn handle_event(&mut self, event: &glutin::event::Event<()>, other_windows: Vec<&mut crate::windows::MyWindows>, egui: &mut EguiGlow, gl_window: &mut glutin::WindowedContext<PossiblyCurrent>, gl: &mut glow::Context) -> Option<ControlFlow>;
+    fn handle_event(&mut self, event: &glutin::event::Event<()>, other_windows: Vec<&mut crate::windows::MyWindows>, egui: &mut EguiGlow, gl_window: &mut glutin::WindowedContext<PossiblyCurrent>, gl: &mut glow::Context) -> TrackedWindowControl;
 }
 
 pub struct TrackedWindowContainer {
@@ -24,10 +24,10 @@ pub struct TrackedWindowContainer {
 }
 
 impl TrackedWindowContainer {
-    pub fn create(
+    pub fn create<TE>(
         window: MyWindows,
         window_builder: glutin::window::WindowBuilder,
-        event_loop: &glutin::event_loop::EventLoop<()>,
+        event_loop: &glutin::event_loop::EventLoopWindowTarget<TE>,
     ) -> Result<TrackedWindowContainer, DisplayCreationError> {
         // let window_builder = glutin::window::WindowBuilder::new()
         //     .with_resizable(true)
@@ -66,7 +66,7 @@ impl TrackedWindowContainer {
         }
     }
 
-    pub fn handle_event_outer(&mut self, event: &glutin::event::Event<()>, other_windows:Vec<&mut crate::windows::MyWindows>) -> Option<ControlFlow> {
+    pub fn handle_event_outer(&mut self, event: &glutin::event::Event<()>, other_windows:Vec<&mut crate::windows::MyWindows>) -> TrackedWindowControl {
 
         // Activate this gl_window so we can use it.
         // We cannot activate it without full ownership, so temporarily move the gl_window into the current scope.
@@ -98,14 +98,12 @@ impl TrackedWindowContainer {
 
         let result = match (self.gl.as_mut(), self.egui.as_mut()) {
             (Some(gl), Some(egui)) => {
-                match self.window.handle_event(event, other_windows, egui, &mut gl_window, gl) {
-                    Some(ControlFlow::Exit) | None => {
-                        // This window wants to go away. Close it.
-                        egui.destroy(gl);
-                        None
-                    },
-                    result => result
-                }
+                let result = self.window.handle_event(event, other_windows, egui, &mut gl_window, gl);
+                if let ControlFlow::Exit = result.requested_control_flow {
+                    // This window wants to go away. Close it.
+                    egui.destroy(gl);
+                };
+                result
             },
             _ => {
                 panic!("Window wasn't fully initialized");
@@ -139,6 +137,11 @@ pub enum IndeterminateWindowedContext {
     PossiblyCurrent(glutin::WindowedContext<glutin::PossiblyCurrent>),
     NotCurrent(glutin::WindowedContext<glutin::NotCurrent>),
     None
+}
+
+pub struct TrackedWindowControl {
+    pub requested_control_flow: ControlFlow,
+    pub windows_to_create: Vec<NewWindowRequest>
 }
 
 #[derive(Error, Debug)]
