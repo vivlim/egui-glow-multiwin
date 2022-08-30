@@ -6,12 +6,12 @@ pub mod windows;
 #[macro_use]
 extern crate enum_dispatch;
 
-
-
 use multi_window::MultiWindow;
 
-use windows::{popup_window, root::{self}};
-
+use windows::{
+    popup_window,
+    root::{self},
+};
 
 fn main() {
     let mut event_loop = glutin::event_loop::EventLoop::with_user_event();
