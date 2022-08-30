@@ -1,11 +1,10 @@
-use glutin::{event_loop::{ControlFlow, EventLoop}, platform::run_return::EventLoopExtRunReturn};
+use glutin::{
+    event_loop::{ControlFlow, EventLoop},
+    platform::run_return::EventLoopExtRunReturn,
+};
 
 use crate::tracked_window::{DisplayCreationError, TrackedWindowContainer};
 use crate::windows::MyWindows;
-
-
-
-
 
 /// Manages multiple `TrackedWindow`s by forwarding events to them.
 pub struct MultiWindow {
@@ -15,14 +14,20 @@ pub struct MultiWindow {
 impl MultiWindow {
     /// Creates a new `MultiWindow`.
     pub fn new() -> Self {
-        MultiWindow {
-            windows: vec![],
-        }
+        MultiWindow { windows: vec![] }
     }
 
     /// Adds a new `TrackedWindow` to the `MultiWindow`.
-    pub fn add<TE>(&mut self, window: NewWindowRequest, event_loop: &glutin::event_loop::EventLoopWindowTarget<TE>) -> Result<(), DisplayCreationError> {
-        Ok(self.windows.push(TrackedWindowContainer::create(window.window_state, window.builder, event_loop)?))
+    pub fn add<TE>(
+        &mut self,
+        window: NewWindowRequest,
+        event_loop: &glutin::event_loop::EventLoopWindowTarget<TE>,
+    ) -> Result<(), DisplayCreationError> {
+        Ok(self.windows.push(TrackedWindowContainer::create(
+            window.window_state,
+            window.builder,
+            event_loop,
+        )?))
     }
 
     /// Runs the event loop until all `TrackedWindow`s are closed.
@@ -35,7 +40,7 @@ impl MultiWindow {
                 if window.is_event_for_window(&event) {
                     // Collect all the other windows.
                     let other_windows = multi_window.windows.iter_mut().chain(handled_windows.iter_mut()).map(|container| &mut container.window).collect();
-                    let window_control = window.handle_event_outer(&event, other_windows);
+                    let window_control = window.handle_event_outer(&event, &event_loop_window_target, other_windows);
                     match window_control.requested_control_flow {
                         ControlFlow::Exit => {
                             println!("window requested exit. Instead of sending the exit for everyone, just get rid of this one.");
@@ -86,6 +91,7 @@ impl MultiWindow {
                                 *flow = ControlFlow::WaitUntil(when_new);
                             }
                         },
+                        ControlFlow::ExitWithCode(n) => (),
                         ControlFlow::Exit => (), // handle differently, only exit if all windows are gone?? what do about a closed root window
                     }
                 }
@@ -127,5 +133,5 @@ impl MultiWindow {
 
 pub struct NewWindowRequest {
     pub window_state: MyWindows,
-    pub builder: glutin::window::WindowBuilder
+    pub builder: glutin::window::WindowBuilder,
 }
